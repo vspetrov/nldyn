@@ -1,0 +1,21 @@
+#!/usr/bin/python
+
+import os
+env = Environment(ENV = os.environ)
+env['CC']='gcc'
+env['CXX']='g++'
+
+#env.Append(CPPPATH = ['/workspace/opencv/build/include'])
+#env.Append(LIBPATH = ['/workspace/opencv/build/x64/vc11/lib'])
+env.Append(LIBS = ['tbb','m','lapack'])
+sources = [
+'nld_sys.cpp',
+'le_solver.cpp',
+'main.cpp',
+'le_solver.h',
+'nld_sys.h'
+]
+
+
+env.Append(CPPFLAGS="-O3 -g -std=gnu++11")
+env.Program(target="nld", source=sources)
