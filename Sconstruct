@@ -17,5 +17,5 @@ sources = [
 ]
 
 
-env.Append(CPPFLAGS="-O3 -g -std=gnu++11")
+env.Append(CPPFLAGS="-O0 -g -std=gnu++11")
 env.Program(target="nld", source=sources)

@@ -4,14 +4,15 @@
 
 class LyapunovExpsSolver {
 public:
-    LyapunovExpsSolver(System *s) { system = s; }
+    LyapunovExpsSolver(System *s) { nld_sys = s; }
     std::vector<double> calcLE(double warmUpTime,
+                               double wudt,
                                int numSteps,
                                double stepTime,
                                double dt,
                                std::vector<double> &ini);
 private:
-    System *system;
+    System *nld_sys;
 };
 
 #endif

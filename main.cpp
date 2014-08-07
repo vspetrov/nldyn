@@ -1,44 +1,31 @@
 #include <iostream>
 #include "nld_sys.h"
-extern "C" void dgeqrf_(const int *M, const int *N, double *A, const int *LDA,
-                       double *TAU, double *WORK, const int *LWORK,
-                       int *INFO);
-
-extern "C" void dorgqr_(const int *M, const int *N, const int *K,
-                        double *A, const int *LDA,
-                       double *TAU, double *WORK, const int *LWORK,
-                       int *INFO);
-
+#include "le_solver.h"
 
 int main(int argc, char **argv) {
     Lorenz lrnz(3);
-    std::vector<double> ini = {1,2,3};
-    lrnz.solve(10,0.001, ini, 0.01);
-    auto ts = lrnz.getTs();
+    // std::vector<double> ini = {0.1,0.1,0.1};
+    // lrnz.solve(10000,0.01, ini, 0.1);
+    // auto ts = lrnz.getTs();
     // ts.plot(1,2);
-#if 0
-    std::vector<double> jac;
-    lrnz.jac(ini, jac, 0);
-    auto vecs = array2vecvec(jac,3);
-    for (auto v : vecs) std::cout << v << std::endl;
-    std::cout << "1x2 = " << dot(vecs[0],vecs[1]) << std::endl;
-    std::cout << "1x3 = " << dot(vecs[0],vecs[2]) << std::endl;
-    std::cout << "3x2 = " << dot(vecs[2],vecs[1]) << std::endl;
-    const int dim = 3;
-    const int lwork = 6;
-    double tau[dim];
-    double work[lwork];
-    int info;
-    dgeqrf_(&dim,&dim,&*jac.begin(),&dim,tau,work,&lwork,&info);
-    assert(info == 0);
-    dorgqr_(&dim,&dim,&dim,&*jac.begin(),&dim,tau,work,&lwork,&info);
-    assert(info == 0);
-    std::cout << std::endl;
-    vecs = array2vecvec(jac,3);
-    for (auto v : vecs) std::cout << v << std::endl;
-    std::cout << "1x2 = " << dot(vecs[0],vecs[1]) << std::endl;
-    std::cout << "1x3 = " << dot(vecs[0],vecs[2]) << std::endl;
-    std::cout << "3x2 = " << dot(vecs[2],vecs[1]) << std::endl;
-#endif
+    // LyapunovExpsSolver les(&lrnz);
+    // std::cout << les.calcLE(100,0.01,100000,0.001,0.0001,ini) << std::endl;
+
+    // std::vector<double> ini = {1,2,3};
+    // FHN fhn;
+    // fhn.solve(1000,0.01,ini,0.01);
+    // auto ts = fhn.getTs();
+    // ts.plot(0,1);
+    // LyapunovExpsSolver les(&fhn);
+    // std::cout << les.calcLE(100,0.01,10000,0.01,0.001,ini) << std::endl;
+
+    std::vector<double> ini = {1,2,3};
+    Rossler rslr;
+    // rslr.solve(1000,0.01,ini,0.01);
+    // auto ts = rslr.getTs();
+    // ts.plot(2,1);
+    LyapunovExpsSolver les(&rslr);
+    std::cout << les.calcLE(500,0.01,10000,0.1,0.001,ini) << std::endl;
+
     return 0;
 }
