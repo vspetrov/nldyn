@@ -1,7 +1,9 @@
 #include <iostream>
-#include "nld_sys.h"
 #include "le_solver.h"
 
+#include "systems/lorenz.hpp"
+#include "systems/rossler.hpp"
+#include "systems/fhn.hpp"
 int main(int argc, char **argv) {
     // Lorenz lrnz;
     // std::vector<double> ini = {0.1,0.1,0.1};

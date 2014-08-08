@@ -5,15 +5,18 @@ env = Environment(ENV = os.environ)
 env['CC']='gcc'
 env['CXX']='g++'
 
-#env.Append(CPPPATH = ['/workspace/opencv/build/include'])
+basedir = os.getcwd()
+env.Append(CPPPATH = [basedir])
 #env.Append(LIBPATH = ['/workspace/opencv/build/x64/vc11/lib'])
 env.Append(LIBS = ['tbb','m'])
 sources = [
 'nld_sys.cpp',
 'le_solver.cpp',
 'main.cpp',
-'le_solver.h',
-'nld_sys.h'
+'time_series.cpp',
+'systems/lorenz.cpp',
+'systems/rossler.cpp',
+'systems/fhn.cpp',
 ]
 
 
