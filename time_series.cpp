@@ -32,30 +32,48 @@ void TimeSeries::plot(int x, int y) {
     fclose(gp);
 }
 
-void TimeSeries::plotRows(std::vector<int> &idx) {
-    std::vector<std::string> files;
-    std::string gp_cmd="plot ";
+void TimeSeries::createRowFiles(std::vector<int> &idx, int xaxis_row_id) {
+    state_t xaxis;
+    if (xaxis_row_id >= 0 )
+        xaxis = row(xaxis_row_id);
+
     for (auto id : idx) {
         auto r = row(id);
         std::ostringstream oss;
         oss << id;
         std::string filename = ".nldyn.ts.row"+oss.str() + ".dat";
-        files.push_back(filename);
+        row_files.push_back(filename);
         FILE *f = fopen(filename.c_str(),"w");
-        for (auto v : r)
-            fprintf(f,"%g\n",v);
+        if (xaxis_row_id >= 0) {
+            for (int i=0; i<xaxis.size(); i++)
+                fprintf(f,"%g %g\n",xaxis[i],r[i]);
+        } else {
+            for (auto v : r)
+                fprintf(f,"%g\n",v);
+        }
         fclose(f);
     }
-    for (int i=0; i<files.size() -1 ; i++)
-        gp_cmd += "'"+files[i]+"' w l, ";
-    gp_cmd += "'"+files.back()+"' w l\n";
+}
+
+void TimeSeries::cleanupRowFiles() {
+    for (auto f : row_files) remove(f.c_str());
+}
+
+void TimeSeries::plotRows(std::vector<int> &idx, int xaxis) {
+    createRowFiles(idx,xaxis);
+    std::string extra_modifier = "";
+    if (xaxis >= 0)
+        extra_modifier = " u 1:2";
+    std::string gp_cmd="plot ";
+    for (int i=0; i<row_files.size() -1 ; i++)
+        gp_cmd += "'"+row_files[i]+"'"+extra_modifier+" w l, ";
+    gp_cmd += "'"+row_files.back()+"'"+extra_modifier+" w l\n";
 
     FILE *gp = popen("gnuplot -persist","w");
     fprintf(gp,"%s",gp_cmd.c_str());
     fprintf(gp,"e");
     fclose(gp);
-
-    for (auto f : files) remove(f.c_str());
+    cleanupRowFiles();
 }
 
 void TimeSeries::plotRows() {
@@ -64,5 +82,8 @@ void TimeSeries::plotRows() {
         idx.push_back(i);
     plotRows(idx);
 }
+
+
+
 TimeSeries::~TimeSeries() {
 }
