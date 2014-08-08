@@ -7,7 +7,7 @@ env['CXX']='g++'
 
 #env.Append(CPPPATH = ['/workspace/opencv/build/include'])
 #env.Append(LIBPATH = ['/workspace/opencv/build/x64/vc11/lib'])
-env.Append(LIBS = ['tbb','m','lapack'])
+env.Append(LIBS = ['tbb','m'])
 sources = [
 'nld_sys.cpp',
 'le_solver.cpp',

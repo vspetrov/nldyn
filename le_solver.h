@@ -4,14 +4,25 @@
 
 class LyapunovExpsSolver {
 public:
-    LyapunovExpsSolver(System *s) { nld_sys = s; }
+    LyapunovExpsSolver(System *s) {
+        nld_sys = s;
+        debugFlag = false;
+    }
     std::vector<double> calcLE(double warmUpTime,
                                double wudt,
                                int numSteps,
                                double stepTime,
                                double dt,
-                               std::vector<double> &ini);
+                               std::vector<double> &ini,
+                               double eps);
+
+    double getKYdim() { return KYdim; }
+    void setDbg(bool value) { debugFlag = value; }
 private:
+    bool debugFlag;
+    void calcKaplanYorkeDimension(std::vector<double> &LEs);
+    std::vector<double> LEs;
+    double KYdim;
     System *nld_sys;
 };
 
