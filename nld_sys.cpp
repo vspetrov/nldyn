@@ -6,8 +6,7 @@ System::System(int dimension) {
     vars.resize(dimension);
     for (int i=0; i<4; i++)
         _rk4[i].resize(dimension);
-    jacobian.resize(dim);
-    for (auto &jac_i : jacobian) jac_i.resize(dim);
+    jacobian.resize(dim*dim);
     solveBoth = false;
 }
 
@@ -107,7 +106,7 @@ void System::rhs_linearized(const_it_t &state, const_it_t& lin_state,
         for (int i=0; i<dim; i++) {
             *out = std::inner_product(lin_state+dim*j,
                                       lin_state+dim*(j+1),
-                                      jacobian[i].begin(),0.0);
+                                      jacobian.begin()+dim*i,0.0);
             out++;
         }
     }

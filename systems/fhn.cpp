@@ -13,9 +13,10 @@ void FHN::rhs(const_it_t &state, it_t & dvdt, double time) {
 
 
 void FHN::jac(const_it_t &state,
-              std::vector<state_t> & out, double time) {
-    assert(out.size() == dim);
+              state_t & out, double time) {
+    assert(out.size() == dim*dim);
+    auto it = out.begin();
 
-    out[0][0] = 1-state[0]*state[0];      out[0][1] = -1;
-    out[1][0] = e; out[1][1] = 0;
+    it[0] = 1-state[0]*state[0];      it[1] = -1; it += dim;
+    it[0] = e;                        it[1] = 0;
 }

@@ -10,7 +10,7 @@ public:
     FHN();
     virtual void rhs(const_it_t &state, it_t & out, double time);
     virtual void jac(const_it_t &state,
-                     std::vector<state_t> & out, double time);
+                     state_t & out, double time);
 };
 
 #endif

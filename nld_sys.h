@@ -11,7 +11,7 @@ protected:
     state_t vars;
     state_t _rk4[4];
     TimeSeries ts;
-    std::vector<state_t> jacobian;
+    state_t jacobian;
     bool solveBoth;
 public:
     System(int dimension);
@@ -23,7 +23,7 @@ public:
                         it_t & out, double time);
 
     virtual void jac(const_it_t &state,
-                     std::vector<state_t> &out, double time) = 0;
+                     state_t &out, double time) = 0;
     void rk4_step(state_t &v, double dt, double time);
     void rhs_dt(const state_t &state, state_t & out, double time, double dt);
     void solve(double MaxTime, double dt,

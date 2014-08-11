@@ -32,12 +32,15 @@ std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
     state_t s0 = nld_sys->getState();
     int dim = nld_sys->getDim();
 
+    bool epsCrit = (eps > 0);
+
     LEs.resize(dim);
     for (int i=0; i<LEs.size(); i++) {
         LEs[i] = 0.0;
     }
     auto immediateLEs(LEs);
     for (auto &v : immediateLEs) v = 1e10;
+
     auto diff(LEs);
 
     nld_sys->setSolveBoth(true);
@@ -54,6 +57,7 @@ std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
     std::vector<double> norms(dim);
     for (auto &v: norms) v = 0;
 
+    int actualSteps = numSteps;
     for (int i=0; i<numSteps; i++) {
         nld_sys->solve(stepTime, dt, s_both);
         s_both.swap(nld_sys->getState());
@@ -63,31 +67,40 @@ std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
             // std::cout << "normed " << j << ":" << LE_matrix_ortonormed[j] << std::endl;
             LEs[j] += log(norms[j]);
         }
+
         for (int j=0; j<dim; j++) {
             double le = LEs[j]/((i+1)*stepTime);
-            double maxv = le > immediateLEs[j] ? le : immediateLEs[j];
-            diff[j] = fabs(le-immediateLEs[j])/maxv;
+            if (epsCrit) {
+                double maxv = fabs(le) > fabs(immediateLEs[j]) ? fabs(le) : fabs(immediateLEs[j]);
+                diff[j] = fabs(le-immediateLEs[j])/maxv;
+            }
             immediateLEs[j] = le;
+
         }
+
         if (debugFlag) {
             ts.addPoint(immediateLEs);
         }
 
-        bool can_stop = true;
-        for (auto v : immediateLEs)
-            if (v > eps) {
-                can_stop = false;
+        if (epsCrit){
+            bool can_stop = true;
+            for (auto v : diff)
+                if (v > eps) {
+                    can_stop = false;
+                    actualSteps = i+1;
+                    break;
+                }
+            if (can_stop) {
+                std::cout << "Desired accuracy achieved: iterations " <<
+                    i << " out of " << numSteps << std::endl;
                 break;
             }
-        if (can_stop) {
-            std::cout << "Desired accuracy achieved: iterations " <<
-                i << " out of " << numSteps << std::endl;
-            break;
         }
 
     }
+
     for (int i=0; i<dim; i++) {
-        LEs[i] = LEs[i]/(numSteps*stepTime);
+        LEs[i] = LEs[i]/(actualSteps*stepTime);
     }
     calcKaplanYorkeDimension(LEs);
     if (debugFlag)

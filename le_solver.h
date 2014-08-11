@@ -14,7 +14,7 @@ public:
                                double stepTime,
                                double dt,
                                std::vector<double> &ini,
-                               double eps);
+                               double eps = -1);
 
     double getKYdim() { return KYdim; }
     void setDbg(bool value) { debugFlag = value; }
