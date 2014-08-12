@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 TimeSeries::TimeSeries() {
+    noLegend = false;
 }
 
 void TimeSeries::addPoint(std::vector<double> &p) {
@@ -70,6 +71,9 @@ void TimeSeries::plotRows(std::vector<int> &idx, int xaxis) {
     gp_cmd += "'"+row_files.back()+"'"+extra_modifier+" w l\n";
 
     FILE *gp = popen("gnuplot -persist","w");
+    if (noLegend) {
+        fprintf(gp,"set key off\n");
+    }
     fprintf(gp,"%s",gp_cmd.c_str());
     fprintf(gp,"e");
     fclose(gp);

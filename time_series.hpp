@@ -13,7 +13,9 @@ public:
     void plotRows(std::vector<int> &idx, int xaxis = -1);
     void plotRows();
     ~TimeSeries();
+    void setNoLegend(bool v) { noLegend = v; }
 private:
+    bool noLegend;
     std::vector<std::string> row_files;
     void createRowFiles(std::vector<int> &idx, int xaxis_row_id = -1);
     void cleanupRowFiles();

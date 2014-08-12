@@ -103,8 +103,10 @@ std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
         LEs[i] = LEs[i]/(actualSteps*stepTime);
     }
     calcKaplanYorkeDimension(LEs);
-    if (debugFlag)
+    if (debugFlag) {
+        ts.setNoLegend(true);
         ts.plotRows();
+    }
     return LEs;
 
 }

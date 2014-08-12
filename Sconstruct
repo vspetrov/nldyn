@@ -17,6 +17,7 @@ sources = [
 'systems/lorenz.cpp',
 'systems/rossler.cpp',
 'systems/fhn.cpp',
+'systems/ap.cpp',
 'systems/fhn3.cpp',
 ]
 
