@@ -13,7 +13,7 @@ sources = [
 'nld_sys.cpp',
 'le_solver.cpp',
 'main.cpp',
-'time_series.cpp',
+'analyzers/time_series.cpp',
 'systems/lorenz.cpp',
 # 'systems/rossler.cpp',
 'systems/fhn.cpp',

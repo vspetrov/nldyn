@@ -2,7 +2,7 @@
 #include "systems/fhn.hpp"
 #include "systems/lorenz.hpp"
 #include "le_solver.h"
-#include "time_series.hpp"
+#include "analyzers/time_series.hpp"
 int main(int argc, char **argv) {
     System *s;
     FHN3 fhn3;

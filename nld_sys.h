@@ -1,7 +1,7 @@
 #ifndef _NLD_SYS
 #define _NLD_SYS
 #include "utils.hpp"
-#include "analyzer.hpp"
+#include "analyzers/analyzer.hpp"
 
 typedef boost::function<void (const state_t&, state_t &, const double)> rhs_fn_t;
 typedef boost::function<void (const state_t&, matrix_t &, const double, state_t &dfdt)> jac_fn_t;
