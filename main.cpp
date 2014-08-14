@@ -1,27 +1,27 @@
 #include <iostream>
-#include "le_solver.h"
-
-
-#include "systems/ap.hpp"
+#include "systems/fhn.hpp"
 #include "systems/lorenz.hpp"
-#include "systems/fhn3.hpp"
-
+#include "le_solver.h"
 int main(int argc, char **argv) {
+    System *s;
+    FHN3 fhn3;
 
-    // System *s = new AP3();
-    // System *s = new Lorenz();
-    System *s = new FHN3();
-    s->solve(3000,0.01,s->getState(),0.1);
+
+    s = &fhn3;
+    // s->setStepper(System::STEPPER_RK_CK54);
+    s->setSaveTS(0.01);
+    s->solve(3000,0.01,s->getState());
     auto ts = s->getTs();
-    ts.setNoLegend(true);
     std::vector<int> rows_to_plot;
-    for (int i=0; i<s->getDim()/2; i++)
-        rows_to_plot.push_back(2*i+1);
-    ts.plotRows(rows_to_plot,0);
+    rows_to_plot.push_back(1);
+    rows_to_plot.push_back(3);
+    rows_to_plot.push_back(5);
+    ts.setNoLegend(true);
+    ts.plotRows(rows_to_plot, 0);
 
     LyapunovExpsSolver les(s);
-    // les.setDbg(true);
-    std::cout << les.calcLE(1000,0.01,10000, 1,0.01,s->getState()) << std::endl;
-    std::cout << "KYdim: " << les.getKYdim() << std::endl;
+    auto LEs = les.calcLE(5000,0.01,50000,1,0.01,s->getState());
+    for (auto &v : LEs) std::cout << v << std::endl;
+
     return 0;
 }

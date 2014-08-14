@@ -5,9 +5,9 @@
 class TimeSeries {
 public:
     TimeSeries();
-    void addPoint(std::vector<double> &p);
-    std::vector<std::vector<double> > &getAll();
-    std::vector<double> row(int i);
+    void addPoint(ts_point_t &p);
+    ts_t &getAll();
+    ts_row_t row(int i);
     void clear() { ts.clear(); }
     void plot(int x, int y);
     void plotRows(std::vector<int> &idx, int xaxis = -1);

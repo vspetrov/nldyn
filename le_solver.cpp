@@ -2,36 +2,35 @@
 #include <algorithm>
 
 
-static void GramShmidt(int dim, state_t &state, std::vector<double> &norms) {
-    auto st = state.begin()+dim;
-    norms[0] = L2_norm(st, st+dim);
-    normalize(st, st+dim, norms[0]);
+void LyapunovExpsSolver::GramShmidt(ublas::vector_range<state_t> &state, std::vector<double> &norms) {
+    auto st = ublas::subrange(state,0,dim);
+    norms[0] = ublas::norm_2(st);
+    st /= norms[0];
 
     for (int i=1; i<dim; i++) {
-        auto vec = st+i*dim;
-        state_t m(vec,vec+dim);
-
+        auto vec = ublas::subrange(state,i*dim,(i+1)*dim);
         for (int j=0; j<i; j++){
-            double v = std::inner_product(m.begin(),m.end(),st+j*dim,0.0);
-            for (int k=0; k<dim; k++)
-                *(vec+k) -= *(st+j*dim+k)*v;
+            projections[j] = ublas::inner_prod(vec,ublas::subrange(state,j*dim,(j+1)*dim));
+            // for (int k=0; k<dim; k++)
+                // *(vec+k) -= *(st+j*dim+k)*v;
         }
-        norms[i] = L2_norm(vec,vec+dim);
-        normalize(vec, vec+dim, norms[i]);
+        for (int j=0; j<i; j++) {
+            vec -= projections[j]*ublas::subrange(state,j*dim,(j+1)*dim);
+        }
+        norms[i] = ublas::norm_2(vec);
+        vec /= norms[i];
     }
 }
-std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
-                                               double wudt,
-                                               int numSteps,
-                                               double stepTime,
-                                               double dt,
-                                               state_t &ini,
-                                               double eps) {
-    nld_sys->setSolveBoth(false);
+std::vector<double> & LyapunovExpsSolver::calcLE(double warmUpTime,
+                                                 double wudt,
+                                                 int numSteps,
+                                                 double stepTime,
+                                                 double dt,
+                                                 state_t &ini,
+                                                 double eps) {
+    nld_sys->setSolveCombined(false);
     nld_sys->solve(warmUpTime, wudt, ini);
     state_t s0 = nld_sys->getState();
-    int dim = nld_sys->getDim();
-
     bool epsCrit = (eps > 0);
 
     LEs.resize(dim);
@@ -43,8 +42,8 @@ std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
 
     auto diff(LEs);
 
-    nld_sys->setSolveBoth(true);
-    int dboth = nld_sys->getDimBoth();
+    nld_sys->setSolveCombined(true);
+    int dboth = dim*(dim+1);
     state_t s_both(dboth);
     std::copy(s0.begin(), s0.end(), s_both.begin());
     std::fill(s_both.begin()+dim, s_both.end(),0.0);
@@ -61,7 +60,8 @@ std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
     for (int i=0; i<numSteps; i++) {
         nld_sys->solve(stepTime, dt, s_both);
         s_both.swap(nld_sys->getState());
-        GramShmidt(dim, s_both, norms);
+        auto vecs =ublas::subrange(s_both,dim,dboth);
+        GramShmidt(vecs, norms);
 
         for (int j=0; j<dim; j++) {
             // std::cout << "normed " << j << ":" << LE_matrix_ortonormed[j] << std::endl;
@@ -102,7 +102,7 @@ std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
     for (int i=0; i<dim; i++) {
         LEs[i] = LEs[i]/(actualSteps*stepTime);
     }
-    calcKaplanYorkeDimension(LEs);
+    calcKaplanYorkeDimension();
     if (debugFlag) {
         ts.setNoLegend(true);
         ts.plotRows();
@@ -111,7 +111,7 @@ std::vector<double> LyapunovExpsSolver::calcLE(double warmUpTime,
 
 }
 
-void LyapunovExpsSolver::calcKaplanYorkeDimension(std::vector<double> &LEs)
+void LyapunovExpsSolver::calcKaplanYorkeDimension()
 {
     KYdim = -1;
     int k = LEs.size();

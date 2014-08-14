@@ -7,20 +7,26 @@ public:
     LyapunovExpsSolver(System *s) {
         nld_sys = s;
         debugFlag = false;
+        dim = s->getDim();
+        projections.resize(dim);
     }
-    std::vector<double> calcLE(double warmUpTime,
-                               double wudt,
-                               int numSteps,
-                               double stepTime,
-                               double dt,
-                               std::vector<double> &ini,
-                               double eps = -1);
+    std::vector<double> & calcLE(double warmUpTime,
+                     double wudt,
+                     int numSteps,
+                     double stepTime,
+                     double dt,
+                     state_t &ini,
+                     double eps = -1);
 
     double getKYdim() { return KYdim; }
     void setDbg(bool value) { debugFlag = value; }
+
 private:
+    int dim;
+    void GramShmidt(ublas::vector_range<state_t> &state, std::vector<double> &norms);
+    std::vector<double> projections;
     bool debugFlag;
-    void calcKaplanYorkeDimension(std::vector<double> &LEs);
+    void calcKaplanYorkeDimension();
     std::vector<double> LEs;
     double KYdim;
     System *nld_sys;

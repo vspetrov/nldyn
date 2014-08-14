@@ -9,9 +9,8 @@ private:
     double beta;
 public:
     Lorenz();
-    virtual void rhs(const_it_t &state, it_t & out, double time);
-    virtual void jac(const_it_t &state,
-                     state_t & out, double time);
+    virtual void rhs(const state_t &state, state_t & out, double time);
+    virtual void jac(const state_t &state, matrix_t & out, double time, state_t &dfdt);
 };
 
 #endif

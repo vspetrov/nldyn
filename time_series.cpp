@@ -7,15 +7,15 @@ TimeSeries::TimeSeries() {
     noLegend = false;
 }
 
-void TimeSeries::addPoint(std::vector<double> &p) {
+void TimeSeries::addPoint(ts_point_t &p) {
     ts.push_back(p);
 }
 
-std::vector<std::vector<double> >& TimeSeries::getAll() {
+ts_t & TimeSeries::getAll() {
     return ts;
 }
-std::vector<double> TimeSeries::row(int i) {
-    std::vector<double> row;
+ts_row_t TimeSeries::row(int i) {
+    ts_row_t row;
     for (auto point : ts) row.push_back(point[i]);
     return row;
 }
@@ -34,7 +34,7 @@ void TimeSeries::plot(int x, int y) {
 }
 
 void TimeSeries::createRowFiles(std::vector<int> &idx, int xaxis_row_id) {
-    state_t xaxis;
+    ts_row_t xaxis;
     if (xaxis_row_id >= 0 )
         xaxis = row(xaxis_row_id);
 
