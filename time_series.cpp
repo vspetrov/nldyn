@@ -3,12 +3,24 @@
 #include <sstream>
 #include <stdio.h>
 
-TimeSeries::TimeSeries() {
+TimeSeries::TimeSeries(double interval) {
     noLegend = false;
+    m_interval = interval;
 }
 
-void TimeSeries::addPoint(ts_point_t &p) {
-    ts.push_back(p);
+TimeSeries::TimeSeries() {
+    noLegend = true;
+}
+
+void TimeSeries::addPoint(const state_t & state, const double &time) {
+    ts_row_t point(state.size()+1);
+    point[0] = time;
+    std::copy(state.begin(),state.end(), point.begin()+1);
+    ts.push_back(point);
+}
+
+void TimeSeries::addPoint(const ts_row_t & point) {
+    ts.push_back(point);
 }
 
 ts_t & TimeSeries::getAll() {

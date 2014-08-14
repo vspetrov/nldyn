@@ -1,11 +1,15 @@
 #ifndef _TIME_SERIES_H
 #define _TIME_SERIES_H
 #include "utils.hpp"
+#include "analyzer.hpp"
+
 #include <string>
-class TimeSeries {
+class TimeSeries : public Analyzer{
 public:
+    TimeSeries(double interval);
     TimeSeries();
-    void addPoint(ts_point_t &p);
+    virtual void addPoint(const state_t &state, const double &time);
+    void addPoint(const ts_row_t &point);
     ts_t &getAll();
     ts_row_t row(int i);
     void clear() { ts.clear(); }
@@ -15,6 +19,7 @@ public:
     ~TimeSeries();
     void setNoLegend(bool v) { noLegend = v; }
 private:
+    double m_interval;
     bool noLegend;
     std::vector<std::string> row_files;
     void createRowFiles(std::vector<int> &idx, int xaxis_row_id = -1);

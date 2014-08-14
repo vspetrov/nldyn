@@ -20,17 +20,12 @@ System::System(int dimension) {
     rhs_b = boost::bind(&System::rhs, this, _1, _2, _3);
     rhs_combined_b = boost::bind(&System::rhs_combined, this, _1, _2, _3);
     rhs_implicit_active = rhs_b;
-    saveTS = false;
 }
 
-void System::setSaveTS(double interval) {
-    saveTS = true;
-    m_TSAddPointInterval = interval;
+void System::addAnalyzer(Analyzer *analyzer) {
+    analyzers.push_back(analyzer);
 }
 
-TimeSeries & System::getTs() {
-    return ts;
-}
 
 void System::setSolveCombined(bool value) {
     if (value) {
@@ -46,9 +41,7 @@ void System::setSolveCombined(bool value) {
 
 void System::solve(double MaxTime, double dt,
                    state_t ini) {
-    if (saveTS)
-        ts.clear();
-    int ts_point_counter = 0;
+
     double time = 0;
     vars.swap(ini);
 
@@ -68,14 +61,8 @@ void System::solve(double MaxTime, double dt,
             rk_ck54_stepper.do_step(rhs_implicit_active, vars, time, dt);
             break;
         }
-        if (saveTS && time > ts_point_counter*m_TSAddPointInterval) {
-            ts_point_t  p;
-            p.push_back(time);
-            for (int i=0; i<dim; i++) {
-                p.push_back(vars[i]);
-            }
-            ts.addPoint(p);
-            ts_point_counter++;
+        for (auto &a : analyzers) {
+            a->addPoint(vars, time);
         }
         time += dt;
     }

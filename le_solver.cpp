@@ -1,6 +1,6 @@
 #include "le_solver.h"
 #include <algorithm>
-
+#include "time_series.hpp"
 
 void LyapunovExpsSolver::GramShmidt(ublas::vector_range<state_t> &state, std::vector<double> &norms) {
     auto st = ublas::subrange(state,0,dim);
