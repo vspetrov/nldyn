@@ -23,21 +23,19 @@ static inline double _eps_d(double v) {
     -(_eps_max-_eps_min)/((1.0+E)*(1.0+E))*E*_eps_rate;
 }
 
-void AP::rhs(const_it_t &state, it_t & dvdt, double time) {
+void AP::rhs(const state_t &state, state_t & dvdt, double time) {
     dvdt[0] = k*state[0]*(1.0-state[0])*(state[0]-a)-state[0]*state[1];
     dvdt[1] = _eps(state[0])*(k*state[0]-state[1] + ksi);
 }
 
 
-void AP::jac(const_it_t &state,
-              state_t & out, double time) {
-    assert(out.size() == dim*dim);
-    auto it = out.begin();
-
-    it[0] = -3.0*k*state[0]*state[0]+2.0*k*(1.0+a)*state[0]-k*a-state[1]; it[1] = -state[0];
-    it += dim;
+void AP::jac(const state_t &state,
+             matrix_t & out, double time, state_t &dfdt) {
+    out(0,0) = -3.0*k*state[0]*state[0]+2.0*k*(1.0+a)*state[0]-k*a-state[1]; out(0,1) = -state[0];
     double eps = _eps(state[0]);
-    it[0] = eps*k+(k*state[0]-state[1]+ksi)*_eps_d(state[0]);                        it[1] = -eps;
+    out(1,0) = eps*k+(k*state[0]-state[1]+ksi)*_eps_d(state[0]);                        out(1,1) = -eps;
+    dfdt[0] = 0.0;
+    dfdt[1] = 0.0;
 }
 
 
@@ -53,12 +51,12 @@ AP3::AP3() : System(6) {
         vars[i*2] = 0.1;
         vars[i*2+1] = 0;
     }
-    Doo = 0.001;
-    Doe = 0.02;
+    Doo = 0.005;
+    Doe = 0.05;
     Deo = 0.01;
 }
 
-void AP3::rhs(const_it_t &state, it_t & dvdt, double time) {
+void AP3::rhs(const state_t &state, state_t & dvdt, double time) {
     double eps[3];
     for (int i=0; i< num; i++)
         eps[i] = (state[i*2] < 0.05) ? 1.0 : 0.1;
@@ -79,28 +77,28 @@ void AP3::rhs(const_it_t &state, it_t & dvdt, double time) {
 }
 
 
-void AP3::jac(const_it_t &state,
-              state_t & out, double time) {
-    assert(out.size() == dim*dim);
+void AP3::jac(const state_t &state,
+              matrix_t & out, double time, state_t &dfdt) {
     double eps[3];
     for (int i=0; i< num; i++)
         eps[i] = (state[i*2] < 0.05) ? 1.0 : 0.1;
 
-    auto it = out.begin();
 
-    it[0] = -3.0*k[0]*state[0]*state[0]+2.0*k[0]*(1.0+a[0])*state[0]-k[0]*a[0]-state[1]-Doo-Deo;
-    it[1] = -state[0]; it[2] = Doo; it[4] = Deo;
-    it += dim;
-    it[0] = eps[0]*k[0];                        it[1] = -eps[0];     it += dim;
+    out.clear();
+    std::fill(dfdt.begin(),dfdt.end(),0.0);
 
-    it[0] = Doo;
-    it[2] = -3.0*k[1]*state[2]*state[2]+2.0*k[1]*(1.0+a[1])*state[2]-k[1]*a[1]-state[3]-Doo-Deo;
-    it[3] = -state[2];  it[4] = Deo;     it += dim;
-    it[2] = eps[1]*k[1];                        it[3] = -eps[1];     it += dim;
+    out(0,0) = -3.0*k[0]*state[0]*state[0]+2.0*k[0]*(1.0+a[0])*state[0]-k[0]*a[0]-state[1]-Doo-Deo;
+    out(0,1) = -state[0]; out(0,2) = Doo; out(0,4) = Deo;
+    out(1,0) = eps[0]*k[0];                        out(1,1) = -eps[0];
 
-    it[0] = Deo; it[2] = Deo;
-    it[4] = -3.0*k[2]*state[4]*state[4]+2.0*k[2]*(1.0+a[2])*state[4]-k[2]*a[2]-state[5]-2*Doe;
-    it[5] = -state[4];      it += dim;
-    it[4] = eps[2]*k[2];                        it[5] = -eps[2];
+    out(2,0) = Doo;
+    out(2,2) = -3.0*k[1]*state[2]*state[2]+2.0*k[1]*(1.0+a[1])*state[2]-k[1]*a[1]-state[3]-Doo-Deo;
+    out(2,3) = -state[2];  out(2,4) = Deo;
+    out(3,2) = eps[1]*k[1];                        out(3,3) = -eps[1];
+
+    out(4,0) = Deo; out(4,2) = Deo;
+    out(4,4) = -3.0*k[2]*state[4]*state[4]+2.0*k[2]*(1.0+a[2])*state[4]-k[2]*a[2]-state[5]-2*Doe;
+    out(4,5) = -state[4];
+    out(5,4) = eps[2]*k[2];                        out(5,5) = -eps[2];
 
 }

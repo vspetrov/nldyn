@@ -49,18 +49,24 @@ public:
           state_t ini);
 
     template<class AnalyzerType>
-        AnalyzerType* getAnalyzer();
+        std::vector<AnalyzerType*> getAnalyzer();
+
+    void clearAnalyzers(void);
+
+
+
     int getDim() { return dim; }
     state_t & getState() { return vars; }
 };
 
 template<class AnalyzerType>
-AnalyzerType* System::getAnalyzer() {
+std::vector<AnalyzerType*> System::getAnalyzer() {
+    std::vector<AnalyzerType*> result;
     for (auto &a : analyzers) {
         AnalyzerType *ret = dynamic_cast<AnalyzerType*>(a);
-        if (ret) return ret;
+        if (ret) result.push_back(ret);
     }
-    return NULL;
+    return result;
 }
 
 #endif

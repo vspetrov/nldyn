@@ -1,26 +1,36 @@
 #!/usr/bin/python
-
 import os
+import subprocess
+
+# command = ['bash','-c','source /opt/intel/bin/compilervars.sh intel64 && env']
+# proc = subprocess.Popen(command, stdout = subprocess.PIPE)
+
+# for line in proc.stdout:
+    # (key, _, value) = line.partition("=")
+    # os.environ[key] = value
+# proc.communicate()
+
 env = Environment(ENV = os.environ)
-env['CC']='gcc'
-env['CXX']='g++'
+env['CC']='icc'
+env['CXX']='icpc'
 
 basedir = os.getcwd()
 env.Append(CPPPATH = [basedir])
-#env.Append(LIBPATH = ['/workspace/opencv/build/x64/vc11/lib'])
-env.Append(LIBS = ['tbb','m'])
+env.Append(LIBS = ['tbb','m','opencv_core'])
 sources = [
 'nld_sys.cpp',
 'le_solver.cpp',
-'main.cpp',
+# 'main.cpp',
 'analyzers/time_series.cpp',
+'analyzers/mapper.cpp',
 'systems/lorenz.cpp',
 # 'systems/rossler.cpp',
 'systems/fhn.cpp',
-# 'systems/ap.cpp',
+'systems/ap.cpp',
 # 'systems/fhn3.cpp',
 ]
 
 
 env.Append(CPPFLAGS="-O3 -std=gnu++11")
-env.Program(target="nld", source=sources)
+
+env.Program(target="nld", source=sources + ['main.cpp'])

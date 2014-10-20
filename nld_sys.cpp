@@ -83,3 +83,10 @@ void System::rhs_combined(const state_t &state,
         ublas::subrange(out, dim*i, dim*(i+1)) = ublas::prod(jacobian, st);
     }
 }
+
+void System::clearAnalyzers() {
+    for (auto a_ptr : analyzers) {
+        delete a_ptr;
+    }
+    analyzers.clear();
+}

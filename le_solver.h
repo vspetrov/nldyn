@@ -4,12 +4,7 @@
 
 class LyapunovExpsSolver {
 public:
-    LyapunovExpsSolver(System *s) {
-        nld_sys = s;
-        debugFlag = false;
-        dim = s->getDim();
-        projections.resize(dim);
-    }
+    LyapunovExpsSolver(System *s);
     std::vector<double> & calcLE(double warmUpTime,
                      double wudt,
                      int numSteps,
@@ -19,15 +14,16 @@ public:
                      double eps = -1);
 
     double getKYdim() { return KYdim; }
-    void setDbg(bool value) { debugFlag = value; }
-
+    void setKeepImmLEs(bool value) { keepImmediateLEs = value; }
+    void plotFiniteTimeLEs(double windowTime);
 private:
     int dim;
     void GramShmidt(ublas::vector_range<state_t> &state, std::vector<double> &norms);
     std::vector<double> projections;
-    bool debugFlag;
+    bool keepImmediateLEs;
     void calcKaplanYorkeDimension();
     std::vector<double> LEs;
+    std::vector<std::vector<double> > m_ImmLes;
     double KYdim;
     System *nld_sys;
 };

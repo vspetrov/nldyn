@@ -51,7 +51,7 @@ std::vector<double> & LyapunovExpsSolver::calcLE(double warmUpTime,
         s_both[dim+i+i*dim] = 1.0;
     }
 
-    TimeSeries ts;
+    m_ImmLes.clear();
 
     std::vector<double> norms(dim);
     for (auto &v: norms) v = 0;
@@ -78,8 +78,11 @@ std::vector<double> & LyapunovExpsSolver::calcLE(double warmUpTime,
 
         }
 
-        if (debugFlag) {
-            ts.addPoint(immediateLEs);
+        if (keepImmediateLEs) {
+            std::vector<double> ln;
+            for (auto &v : norms) ln.push_back(log(v));
+            ln.push_back(stepTime*(i+1));
+            m_ImmLes.push_back(ln);
         }
 
         if (epsCrit){
@@ -103,13 +106,39 @@ std::vector<double> & LyapunovExpsSolver::calcLE(double warmUpTime,
         LEs[i] = LEs[i]/(actualSteps*stepTime);
     }
     calcKaplanYorkeDimension();
-    if (debugFlag) {
-        ts.setNoLegend(true);
-        ts.plotRows();
-    }
+    // if (debugFlag) {
+        // ts.setNoLegend(true);
+        // ts.plotRows();
+    // }
     return LEs;
 
 }
+
+void LyapunovExpsSolver::plotFiniteTimeLEs(double window)
+{
+    double time = m_ImmLes[0].back();
+    auto imm = m_ImmLes.begin();
+    TimeSeries ts;
+    std::vector<double> immLes(imm->size() - 1);
+    std::fill(immLes.begin(), immLes.end(), 0.0);
+
+    while (imm != m_ImmLes.end()) {
+        double t = imm->back();
+        for (int i=0; i<immLes.size() - 1; i++) {
+            immLes[i] += imm->at(i);
+        }
+        if ( t - time > window - 1e-10) {
+            for (int i=0; i<immLes.size() - 1; i++) immLes[i] /= window;
+            ts.addPoint(immLes);
+            std::fill(immLes.begin(), immLes.end(), 0.0);
+            time = t;
+        }
+        imm++;
+    }
+    ts.setNoLegend(true);
+    ts.plotRows();
+}
+
 
 void LyapunovExpsSolver::calcKaplanYorkeDimension()
 {
@@ -126,4 +155,12 @@ void LyapunovExpsSolver::calcKaplanYorkeDimension()
         KYdim = -2;
     else
         KYdim = k+sum/fabs(LEs[k]);
+}
+
+LyapunovExpsSolver::LyapunovExpsSolver(System *s)
+{
+        nld_sys = s;
+        keepImmediateLEs = false;
+        dim = s->getDim();
+        projections.resize(dim);
 }

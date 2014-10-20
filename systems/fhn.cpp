@@ -27,10 +27,11 @@ FHN3::FHN3() : System(6) {
     a[0]=0.1;
     a[1] = 0.2;
     a[2] = 0.35;
-    e[0]=e[1]=e[2]=0.02;
-    Doo = 0.001;
-    Doe = 0.005;
-    Deo = 0.005;
+    e[0]=e[1]=e[2]=0.01;
+    e[2] = 0.01; //0.01 - no positive, 0.1 - positive LE
+    Doo = 0.001; // 0.001 - positive LE, 0.1 - even large
+    Doe = 0.05;
+    Deo = 0.00;
     for (auto &v : vars) v = 0.1;
 }
 

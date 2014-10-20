@@ -27,6 +27,10 @@ public:
     virtual void rhs(const state_t &state, state_t & out, double time);
     virtual void jac(const state_t &state,
                      matrix_t & out, double time, state_t &dfdt);
+    void setDoo(double v) { Doo = v; }
+    void setDeo(double v) { Deo = v; }
+    void setDoe(double v) { Doe = v; }
+    void setEpsilon(int i, double _e) { e[i] = _e; }
 };
 
 

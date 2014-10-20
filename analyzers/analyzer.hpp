@@ -7,5 +7,6 @@ class Analyzer {
 public:
     Analyzer(){};
     virtual void addPoint(const state_t & state, const double &time) = 0;
+    virtual void clear() = 0;
 };
 #endif

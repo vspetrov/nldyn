@@ -6,17 +6,22 @@
 TimeSeries::TimeSeries(double interval) {
     noLegend = false;
     m_interval = interval;
+    m_lastPointTime = 0;
 }
 
 TimeSeries::TimeSeries() {
     noLegend = true;
+    m_lastPointTime = 0;
 }
 
 void TimeSeries::addPoint(const state_t & state, const double &time) {
-    ts_row_t point(state.size()+1);
-    point[0] = time;
-    std::copy(state.begin(),state.end(), point.begin()+1);
-    ts.push_back(point);
+    if (time - m_lastPointTime >= m_interval) {
+        ts_row_t point(state.size()+1);
+        point[0] = time;
+        std::copy(state.begin(),state.end(), point.begin()+1);
+        ts.push_back(point);
+        m_lastPointTime = time;
+    }
 }
 
 void TimeSeries::addPoint(const ts_row_t & point) {
