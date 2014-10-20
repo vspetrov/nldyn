@@ -15,15 +15,17 @@ public:
 
 
 class FHN3 : public System {
-private:
-    static const int num = 3;
-    double a[num];
-    double e[num];
+protected:
+    int num;
+    double *a;
+    double *e;
     double Doo;
     double Deo;
     double Doe;
+
 public:
     FHN3();
+    ~FHN3() { free(a); free(e); }
     virtual void rhs(const state_t &state, state_t & out, double time);
     virtual void jac(const state_t &state,
                      matrix_t & out, double time, state_t &dfdt);

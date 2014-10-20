@@ -24,6 +24,9 @@ void FHN::jac(const state_t &state,
 
 
 FHN3::FHN3() : System(6) {
+    num = 3;
+    a = new double[num];
+    e = new double[num];
     a[0]=0.1;
     a[1] = 0.2;
     a[2] = 0.35;
