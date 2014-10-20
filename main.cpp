@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 
     double dmin = 0;
     double dmax = 0.02;
-    int steps = 100;
+    int steps = 5;
     double stepsize = (dmax-dmin)/(steps-1);
     for (double Doo = dmin; Doo < dmax+1E-6; Doo+=stepsize){ //0.00005
         FHN3 fhn3;
@@ -60,33 +60,27 @@ int main(int argc, char **argv) {
         s = &fhn3;
         std::cout << "Doo = " << Doo << std::endl;
         std::cout << "Transient skip maps" << std::endl;
-        s->solve(20000,0.01,s->getState());
-        typedef ConstSectionMapper MT;
-        s->addAnalyzer(new MT(0,1.0));
-        s->addAnalyzer(new MT(2,1.0));
-        s->addAnalyzer(new MT(4,1.0));
-        std::cout << "Calculating IBIs" << std::endl;
-        s->solve(500000,0.01,s->getState());
-        auto mappers = s->getAnalyzer<MT>();
-        // std::ostringstream oss;
-        // oss << Doo;
-        // std::string prefix = rst_dir_prefix + "/ibi_Doo_"+oss.str();
-        // mappers[0]->saveMapIntervals(4, prefix+"_xe.txt");
-        // mappers[1]->saveMapIntervals(0, prefix+"_xo0.txt");
-        // mappers[2]->saveMapIntervals(2, prefix+"_xo1.txt");
-        std::vector<double> stddevs;
-        for (int j=0; j<mappers.size(); j++){
-            auto map = mappers[j]->getMap(j*2);
+        s->solve(2000,0.01,s->getState());
+        std::vector<int> ibi_collector_var_ids(3);
+        for (int i=0; i<3; i++)
+            ibi_collector_var_ids[i] = i*2;
+        s->addAnalyzer(new IBI_Collector(ibi_collector_var_ids, 1.0));
 
+        std::cout << "Calculating IBIs" << std::endl;
+        s->solve(50000,0.01,s->getState());
+        auto mapper = s->getAnalyzer<IBI_Collector>().back();
+        std::vector<double> stddevs;
+        for (int j=0; j<3; j++){
+            auto map = mapper->getIBIs(j*2);
             double sum = 0, sq_sum = 0;
-            for (int i=0; i<map->size(); i++) {
-                double v = (*map)[i].first;
+            for (int i=0; i<map.size(); i++) {
+                double v = map[i];
                 ofs[j] << Doo << " " << v << std::endl;
                 sum += v;
                 sq_sum += v*v;
             }
-            double mean = sum / map->size();
-            double stdev = sqrt(sq_sum / map->size() - mean*mean);
+            double mean = sum / map.size();
+            double stdev = sqrt(sq_sum / map.size() - mean*mean);
             stddevs.push_back(stdev);
         }
         stddev_ofs << Doo;
@@ -95,18 +89,18 @@ int main(int argc, char **argv) {
         }
         stddev_ofs << std::endl;
 
-
+#if 0
         // clustering
-        auto map = mappers[2]->getMap(4);
-        cv::Mat data(map->size(),1,CV_32FC1), labels;
-        for (int i=0; i<map->size(); i++) {
-            data.at<float>(i,0) =(float) (*map)[i].first;
+        auto map = mapper->getIBIs(4);
+        cv::Mat data(map.size(),1,CV_32FC1), labels;
+        for (int i=0; i<map.size(); i++) {
+            data.at<float>(i,0) =(float) map[i].first;
         }
         cv::kmeans(data, 2, labels,
                    cv::TermCriteria(cv::TermCriteria::EPS+cv::TermCriteria::COUNT,
                                     20, 0.1), 2, cv::KMEANS_RANDOM_CENTERS);
         std::vector<float> clusters[2];
-        for (int i=0; i<map->size(); i++) {
+        for (int i=0; i<map.size(); i++) {
             int id = labels.at<int>(i);
             clusters[id].push_back(data.at<float>(i,0));
         }
@@ -123,6 +117,7 @@ int main(int argc, char **argv) {
         ofs_clustering << Doo << " " << cmins[large_id] << " " << cmaxs[large_id] << " "
                        << centers[large_id] << " " << cmins[(large_id + 1) % 2] << " " << cmaxs[(large_id + 1) % 2] << " " <<
             centers[(large_id + 1) % 2] << std::endl;
+#endif
         s->clearAnalyzers();
     }
     ofs[0].close();
