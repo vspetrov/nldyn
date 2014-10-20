@@ -1,0 +1,10 @@
+#!/usr/bin/gnuplot
+
+set term x11 0
+plot "map_xo0.txt" w p pt 6 lc rgb "green"
+
+set term x11 1
+plot "map_xo1.txt" w p pt 6 lc rgb "blue"
+
+set term x11 2
+plot "map_xe.txt" w p pt 6 lc rgb "red"
