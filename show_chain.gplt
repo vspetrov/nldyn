@@ -1,0 +1,24 @@
+#!/usr/bin/gnuplot
+
+# set xrange[-75:15]
+# set yrange[0:200]
+# set y2range[0:100]
+
+# set ytics 40 nomirror tc lt 1
+# set y2tics 20 nomirror tc lt 2
+unset key
+set cbrange [-2:2]
+load 'RdBu.plt'
+
+set palette negative
+# set xrange [0:2500]
+# set yrange [0:159]
+# set xlabel 'time (ms)'
+# set ylabel 'i'
+# set xtics ("0" 0, "2500" 1250, "5000" 2500)
+# set ytics ("1" 0, "40" 39, "80" 79, "120" 119, "160" 159)
+
+
+# set terminal eps enhanced font "DejaVuSans,16"
+# set output 'fig4.eps'
+plot "chain_rst.bin"  binary array=(chain,points) scan=xy format="%double" with image
