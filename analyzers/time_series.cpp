@@ -2,6 +2,8 @@
 #include <string>
 #include <sstream>
 #include <stdio.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 TimeSeries::TimeSeries(double interval) {
     noLegend = false;
@@ -104,7 +106,31 @@ void TimeSeries::plotRows() {
     plotRows(idx);
 }
 
+void TimeSeries::saveBinary(std::string filename, bool saveTimeRow, int skip) {
+    int fd = open(filename.c_str(), O_CREAT | O_RDWR, S_IREAD | S_IWRITE);
+    std::cout << "Saving time series to a file "+filename << std::endl;
+    std::cout << "\t<< Number of TS points: " << ts.size() << std::endl;
+    std::cout << "\t<< ts[0].size: " << ts[0].size() << std::endl;
+    int saved_state_dim = (ts[0].size()-1)/(skip+1) + (saveTimeRow ? 1 : 0);
+    std::cout << "\t<< Saved State dimension: " << saved_state_dim << std::endl;
+    std::cout << "\t<< Expected file size: " << ts.size()*saved_state_dim*8 << std::endl;
+    for (int i=0; i < ts.size(); i++) {
+        auto t = ts[i];
+        // write(fd, &t[1], (t.size() - 1)*sizeof(double));
+        auto t_it = t.begin();
+        if (!saveTimeRow) t_it++;
+        std::vector<double> _to_save;
+        while (t_it < t.end()) {
+            _to_save.push_back(*t_it);
+            t_it += (skip+1);
+        }
+        assert(_to_save.size() == saved_state_dim);
+        write(fd, &_to_save[0], _to_save.size()*sizeof(double));
 
+    }
+    close(fd);
+}
 
 TimeSeries::~TimeSeries() {
+
 }

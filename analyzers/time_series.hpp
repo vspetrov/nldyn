@@ -18,6 +18,7 @@ public:
     void plotRows();
     ~TimeSeries();
     void setNoLegend(bool v) { noLegend = v; }
+    void saveBinary(std::string filename, bool saveTimeRow, int skip);
 private:
     double m_lastPointTime;
     double m_interval;
