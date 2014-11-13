@@ -28,9 +28,10 @@ sources = [
 'systems/fhn.cpp',
 'systems/ap.cpp',
 # 'systems/fhn3.cpp',
+'systems/phase.cpp'
 ]
 
+env.Append(LINKFLAGS = ['-openmp'])
+env.Append(CPPFLAGS="-O3 -std=gnu++11 -openmp")
 
-env.Append(CPPFLAGS="-O3 -std=gnu++11")
-
-env.Program(target="nld", source=sources + ['chain.cpp'])
+env.Program(target="nld", source=sources + ['belykh.cpp'])

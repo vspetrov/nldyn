@@ -6,7 +6,7 @@
 
 class TimeSeries : public Analyzer{
 public:
-    TimeSeries(double interval);
+    TimeSeries(double interval, bool _noTime = false);
     TimeSeries();
     virtual void addPoint(const state_t &state, const double &time);
     void addPoint(const ts_row_t &point);
@@ -20,6 +20,7 @@ public:
     void setNoLegend(bool v) { noLegend = v; }
     void saveBinary(std::string filename, bool saveTimeRow, int skip);
 private:
+    bool noTime;
     double m_lastPointTime;
     double m_interval;
     bool noLegend;

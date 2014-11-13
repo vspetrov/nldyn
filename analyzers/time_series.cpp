@@ -5,10 +5,11 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-TimeSeries::TimeSeries(double interval) {
+TimeSeries::TimeSeries(double interval, bool _noTime) {
     noLegend = false;
     m_interval = interval;
     m_lastPointTime = 0;
+    noTime = _noTime;
 }
 
 TimeSeries::TimeSeries() {
@@ -18,10 +19,17 @@ TimeSeries::TimeSeries() {
 
 void TimeSeries::addPoint(const state_t & state, const double &time) {
     if (time - m_lastPointTime >= m_interval) {
-        ts_row_t point(state.size()+1);
-        point[0] = time;
-        std::copy(state.begin(),state.end(), point.begin()+1);
+        int size = state.size() + (noTime ? 0 : 1);
+        ts_row_t point(size);
+        auto it = point.begin();
+        if (!noTime) {
+            point[0] = time;
+            it++;
+        }
+        std::copy(state.begin(),state.end(), it);
         ts.push_back(point);
+
+
         m_lastPointTime = time;
     }
 }

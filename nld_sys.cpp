@@ -5,6 +5,7 @@
 System::System(int dimension) {
     dim = dimension;
     vars.resize(dimension);
+    v_tmp.resize(dimension);
     dfdt.resize(dim);
     for (int i=0; i<4; i++)
         _rk4[i].resize(dimension);
@@ -39,6 +40,31 @@ void System::setSolveCombined(bool value) {
     rk_ck54_stepper = ode::runge_kutta_cash_karp54_classic<state_t>();
 }
 
+void System::do_step(double dt, double time) {
+    rhs(vars, dfdt, time);
+    for (int i=0; i<dim; i++) {
+        _rk4[0][i] = dt*dfdt[i];
+        v_tmp[i] = vars[i]+_rk4[0][i]/2.0;
+    }
+
+    rhs(v_tmp, dfdt, time);
+    for (int i=0; i<dim; i++) {
+        _rk4[1][i] = dt*dfdt[i];
+        v_tmp[i] = vars[i]+_rk4[1][i]/2.0;
+    }
+
+    rhs(v_tmp, dfdt, time);
+    for (int i=0; i<dim; i++) {
+        _rk4[2][i] = dt*dfdt[i];
+        v_tmp[i] = vars[i]+_rk4[2][i];
+    }
+
+    rhs(v_tmp, dfdt, time);
+    for (int i=0; i<dim; i++) {
+        _rk4[3][i] = dt*dfdt[i];
+        vars[i] += (_rk4[0][i]+_rk4[1][i]*2.0 + _rk4[2][i]*2 + _rk4[3][i])/6.0;
+    }
+}
 void System::solve(double MaxTime, double dt,
                    state_t ini) {
 
@@ -59,6 +85,9 @@ void System::solve(double MaxTime, double dt,
             break;
         case STEPPER_RK_CK54:
             rk_ck54_stepper.do_step(rhs_implicit_active, vars, time, dt);
+            break;
+        case STEPPER_RK4_OWN:
+            do_step(dt,time);
             break;
         }
         for (auto &a : analyzers) {

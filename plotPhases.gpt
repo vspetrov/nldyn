@@ -1,0 +1,33 @@
+#!/usr/bin/gnuplot
+unset border
+set polar
+
+set style line 10 lt 1 lc 0 lw 0.3 #redefine a new line style for the grid
+
+set grid polar pi/6 #set the grid to be displayed every 60 degrees
+set grid ls 10
+
+set xrange [-1:1] #make gnuplot to go until 6000
+set yrange [-1:1]
+
+set xtics axis #disply the xtics on the axis instead of on the border
+set ytics axis
+
+set xtics scale 0 #"remove" the tics so that only the y tics are displayed
+set ytics 0, 1, 1
+
+set size square
+
+set key off
+
+set_label(x, text) = sprintf("set label '%s' at (1.1*cos(%f)), (1.1*sin(%f)) center", text, x, x)
+#here all labels are created
+eval set_label(0, "0")
+eval set_label(pi/2, "Pi/2")
+eval set_label(pi, "Pi")
+eval set_label(3*pi/2, "3*Pi/2")
+
+
+#and finally the plot
+plot "._phases.dat" index 0 u 1:2 w p ps 2 pt 7 lc rgb 'green',\
+     "._phases.dat" index 1 u 1:2 w p ps 2 pt 7 lc rgb 'blue'

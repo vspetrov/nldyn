@@ -10,6 +10,7 @@ class System {
 protected:
     int dim;
     state_t vars;
+    state_t v_tmp;
     state_t dfdt;
     state_t _rk4[4];
     std::vector<Analyzer*> analyzers;
@@ -29,8 +30,10 @@ public:
         STEPPER_RK4,
         STEPPER_ROSENBROCK4,
         STEPPER_RK_FEHLBERG78,
-        STEPPER_RK_CK54
+        STEPPER_RK_CK54,
+        STEPPER_RK4_OWN
     };
+    void do_step(double dt, double time);
     void addAnalyzer(Analyzer *analyzer);
     void setStepper(int _stepper);
     System(int dimension);
