@@ -8,91 +8,113 @@
 #include <algorithm>
 #include <iterator>
 #include <opencv/cv.h>
+#include <sstream>
+#include <string>
+#include <exception>
+
+#define XSTR(X) STR(X)
+#define STR(X) #X
+#define ALPHA PI/6
+
+template<typename T>
+std::string to_str(T value){
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
 
 int main(int argc, char **argv) {
-    int N = 10;
-    Kuramoto Kmt(N);
-
+    int N = 100;
     double delta = 0.02;
-    double K = atof(argv[1]);
-    double alpha = PI/6;
-    Kmt.setK(K);
-    Kmt.initOmegasDelta(2,delta);
-    std::cout << "Phase I: Pre-calc..." << std::endl;
-    double t1 = cv::getTickCount();
-    Kmt.solve(5000,0.01,Kmt.getState());
-    std::cout << "Phase I done. Elapsed: " << ((double)cv::getTickCount() - t1) / cv::getTickFrequency() << std::endl;
+    double alpha = ALPHA;
+    double omega0 = 2;
 
-    double A = 0;
-    Kmt.addAnalyzer(new TimeSeries(0.1, true));
+    std::string alpha_str(XSTR(ALPHA));
+    std::replace(alpha_str.begin(), alpha_str.end(), '/', '_');
 
-    t1 = cv::getTickCount();
-    std::cout << "Phase II: solving with TimeSeries..." << std::endl;
-    Kmt.solve(5000,0.01,Kmt.getState());
-    std::cout << "Phase II done. Elapsed: " << ((double)cv::getTickCount() - t1) / cv::getTickFrequency() << std::endl;
+    std::string filename=(
+        "belykh_{N:"+to_str(N)+"}_{om0:"+to_str(omega0)+"}_{delta:"+to_str(delta)+
+        "}_{alpha:"+alpha_str+"}.dat"
+        );
 
 
 
-    t1 = cv::getTickCount();
-    std::cout << "Phase III: TimeSeries postprocessing..." << std::endl;
-
-    auto ts  = Kmt.getAnalyzer<TimeSeries>().back()->getAll();
-    std::vector<bool> isSync(N);
-    std::fill(isSync.begin(), isSync.end(), true);
-    std::vector<double> maxAngle(N);
-    std::fill(maxAngle.begin(), maxAngle.end(), 0.0);
+    std::cout << "*********************************************************\n";
+    std::cout << "Experiment start:" << "\n\t*** N=" << N
+              << " delta=" << delta << " alpha=" << XSTR(ALPHA) << std::endl;
+    std::cout << "Result: " << filename << std::endl;
+    std::cout << "*********************************************************\n";
 
 
-    for (int i=0; i<ts.size(); i++) {
-        auto row = ts[i];
-        for (int j=0; j<N; j++) {
-            double real_delta = fabs(row[j]-row[0]);
-            if ((fmod(real_delta,2*PI) > alpha) && isSync[j]) {
-                isSync[j] = false;
-            }
-            if (isSync[j]) {
-                double angle = fmod(real_delta,2*PI);
-                if (angle > PI) angle = -(2*PI-angle);
-                if (fabs(angle) > fabs(maxAngle[j])) maxAngle[j] = angle;
+    std::ofstream ofs(filename);
+
+    double K=0;
+    for (K = 0.; K < 0.6+1e-5; K+=0.01) {
+        Kuramoto Kmt(N);
+        Kmt.setK(K);
+        Kmt.initOmegasDelta(omega0,delta);
+        std::cout << "Phase I: Pre-calc..." << std::endl;
+        double t1 = cv::getTickCount();
+        Kmt.solve(3000,0.01,Kmt.getState());
+        std::cout << "\t->Done. Elapsed: " << ((double)cv::getTickCount() - t1) / cv::getTickFrequency() << std::endl;
+
+        double A = 0;
+        Kmt.addAnalyzer(new TimeSeries(0.1, true));
+
+        t1 = cv::getTickCount();
+        std::cout << "Phase II: solving with TimeSeries..." << std::endl;
+        Kmt.solve(7000,0.01,Kmt.getState());
+        std::cout << "\t->Done. Elapsed: " << ((double)cv::getTickCount() - t1) / cv::getTickFrequency() << std::endl;
+        t1 = cv::getTickCount();
+
+        std::cout << "Phase III: TimeSeries postprocessing..." << std::endl;
+
+        auto ts  = Kmt.getAnalyzer<TimeSeries>().back()->getAll();
+        std::vector<bool> isSync(N);
+        std::fill(isSync.begin(), isSync.end(), true);
+
+
+        for (int i=0; i<ts.size(); i++) {
+            auto row = ts[i];
+            for (int j=0; j<N; j++) {
+                double real_delta = fabs(row[j]-row[0]);
+                if ((fmod(real_delta,2*PI) > alpha) && isSync[j]) {
+                    isSync[j] = false;
+                }
+                if (isSync[j]) {
+                    double angle = fmod(real_delta,2*PI);
+                }
             }
         }
-    }
-    std::cout << "Phase III done. Elapsed: " << ((double)cv::getTickCount() - t1) / cv::getTickFrequency() << std::endl;
 
-    int numSync = 1;
-    double Alpha;
-    double maxPostive = 0, maxNegative = 0, maxFabs = 0;
-    for (int i=0; i<N; i++) {
-        if (i == 0) continue;
-        if (isSync[i]) {
-            numSync++;
-            if (maxAngle[i] > 0 && maxAngle[i] > maxPostive)
-                maxPostive = maxAngle[i];
-            if (maxAngle[i] < 0 && maxAngle[i] < maxNegative)
-                maxNegative = maxAngle[i];
-            if (fabs(maxAngle[i]) > maxFabs)
-                maxFabs = fabs(maxAngle[i]);
+        int numSync = 1;
+        for (int i=0; i<N; i++) {
+            if (i == 0) continue;
+            if (isSync[i]) {
+                numSync++;
+            }
         }
-    }
-    Alpha = maxPostive - maxNegative;
-    std::cout << "NumSynced: " << numSync << " out of " << N << std::endl;
-    std::cout << "Alpha: " << Alpha << " rad; " << Alpha/PI*180.0 << " degrees" << std::endl;
-    std::cout << "maxIndAlpha: " << maxFabs << " rad; " << maxFabs/PI*180.0 << " degrees" << std::endl;
-    auto om_ptr = Kmt.getOmegas();
-    int numSyncTheor = 1;
-    for (int i=1; i<N; i++) {
-        double _delta = om_ptr->at(i)-om_ptr->at(0);
-        if (K > fabs(_delta)/(cos(3.0*alpha/2.0)*sin(alpha)))
-            numSyncTheor++;
-    }
-    std::cout << "NumSynced Theor: " << numSyncTheor << std::endl;
-#if 0
-    std::ofstream ofs("ts.dat");
-    for (auto &v : ts) {
-        ofs << v[0] << " " << v[5] << " " << v[9] << std::endl;
+
+
+        auto om_ptr = Kmt.getOmegas();
+        int numSyncTheor = 1;
+        for (int i=1; i<N; i++) {
+            double _delta = om_ptr->at(i)-om_ptr->at(0);
+            if (K > fabs(_delta)/(cos(3.0*alpha/2.0)*sin(alpha)))
+                numSyncTheor++;
+        }
+
+        std::cout << "\t->Done. Elapsed: " << ((double)cv::getTickCount() - t1) / cv::getTickFrequency() << std::endl;
+        std::cout << "-----\nStep Completed: K=" << K << " NsNum="
+                  << numSync << " NsTh=" << numSyncTheor << std::endl;
+        std::cout << "---------------------------------------------------------\n";
+
+        ofs << K << " " << numSync << " " << numSyncTheor << "\n";
+
+
+        // Kmt.plotCircle();
     }
     ofs.close();
-#endif
-    Kmt.plotCircle();
+
     return 0;
 }
