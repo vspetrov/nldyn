@@ -14,7 +14,7 @@
 
 #define XSTR(X) STR(X)
 #define STR(X) #X
-#define ALPHA PI/6
+#define ALPHA PI/12
 
 template<typename T>
 std::string to_str(T value){
@@ -24,10 +24,13 @@ std::string to_str(T value){
 }
 
 int main(int argc, char **argv) {
-    int N = 100;
+    int N = 10;
     double delta = 0.02;
     double alpha = ALPHA;
     double omega0 = 2;
+
+    bool singleRun = false;
+    if (argc > 1) singleRun  = true;
 
     std::string alpha_str(XSTR(ALPHA));
     std::replace(alpha_str.begin(), alpha_str.end(), '/', '_');
@@ -42,14 +45,22 @@ int main(int argc, char **argv) {
     std::cout << "*********************************************************\n";
     std::cout << "Experiment start:" << "\n\t*** N=" << N
               << " delta=" << delta << " alpha=" << XSTR(ALPHA) << std::endl;
-    std::cout << "Result: " << filename << std::endl;
+    if (!singleRun)
+        std::cout << "Result: " << filename << std::endl;
     std::cout << "*********************************************************\n";
 
+    std::ofstream ofs;
+    if (!singleRun)
+        ofs.open(filename);
 
-    std::ofstream ofs(filename);
+    double K = 0;
+    if (singleRun)
+        K=atof(argv[1]);
 
-    double K=0;
-    for (K = 0.; K < 0.6+1e-5; K+=0.01) {
+    int numSteps = 60;
+    double Kmax = 1;
+    double Kstep = Kmax/(numSteps - 1);
+    for (int step = 0; singleRun || step < numSteps; step++, K+=Kstep) {
         Kuramoto Kmt(N);
         Kmt.setK(K);
         Kmt.initOmegasDelta(omega0,delta);
@@ -109,12 +120,14 @@ int main(int argc, char **argv) {
                   << numSync << " NsTh=" << numSyncTheor << std::endl;
         std::cout << "---------------------------------------------------------\n";
 
+        if (singleRun) break;
         ofs << K << " " << numSync << " " << numSyncTheor << "\n";
 
 
         // Kmt.plotCircle();
     }
-    ofs.close();
+    if (!singleRun)
+        ofs.close();
 
     return 0;
 }
