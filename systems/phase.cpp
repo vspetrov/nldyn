@@ -13,14 +13,16 @@ Kuramoto::Kuramoto(int _size) : System(_size) {
 
     for (int i=0; i<N; i++) {
         omega[i] = om0 + om_delta*i;
-        vars[i] = i*2*PI/N;
+        vars[i] = i*2*PI/N +fmod(rand(), PI/10);
+
     }
 
 }
 
-void Kuramoto::initOmegasDelta(double omega0, double delta) {
+void Kuramoto::initOmegasDelta(double omega0, double delta_max) {
+
     for (int i=0; i<N; i++) {
-        omega[i] = omega0 + i*delta;
+        omega[i] = omega0 + i*delta_max/(N-1);
     }
 }
 void Kuramoto::rhs(const state_t &state, state_t & dvdt, double time) {
