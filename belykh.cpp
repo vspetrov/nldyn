@@ -24,7 +24,7 @@ std::string to_str(T value){
 }
 
 int main(int argc, char **argv) {
-    int N = 10;
+    int N = 100;
     double delta = 0.02;
     double alpha = ALPHA;
     double omega0 = 2;
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     std::replace(alpha_str.begin(), alpha_str.end(), '/', '_');
 
     std::string filename=(
-        "belykh_{N:"+to_str(N)+"}_{om0:"+to_str(omega0)+
+        "belykh_{N:"+to_str(N)+"}_random_{om0:"+to_str(omega0)+
         "}_{alpha:"+alpha_str+"}.dat"
         );
 
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
         delta = atof(argv[2]);
         Kuramoto Kmt(N);
         std::cout << "K = " << K << " delta=" << delta << std::endl;
-        Kmt.initOmegasDelta(omega0,delta);
+        Kmt.initOmegasDeltaRandom(omega0,delta);
         Kmt.setK(K);
         Kmt.solve(5000,0.01,Kmt.getState());
         Kmt.plotCircle();
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
         delta = delta_start + delta_step*dc;
         bool sync = false;
         Kuramoto Kmt(N);
-        Kmt.initOmegasDelta(omega0,delta);
+        Kmt.initOmegasDeltaRandom(omega0,delta);
         std::cout << "Step " << dc << " out of " << num_steps
                   << "; delta = " << delta
                   <<"; Elapsed: " << (cv::getTickCount() - t1)/cv::getTickFrequency() << std::endl;

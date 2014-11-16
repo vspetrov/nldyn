@@ -25,6 +25,15 @@ void Kuramoto::initOmegasDelta(double omega0, double delta_max) {
         omega[i] = omega0 + i*delta_max/(N-1);
     }
 }
+
+void Kuramoto::initOmegasDeltaRandom(double omega0, double delta_max) {
+
+    omega[0] = omega0;
+    for (int i=1; i<N; i++) {
+        omega[i] = omega0 + rand()/(double)RAND_MAX*delta_max;
+    }
+}
+
 void Kuramoto::rhs(const state_t &state, state_t & dvdt, double time) {
     double r = 0, psi = 0;
     double sin_sum = 0, cos_sum = 0;

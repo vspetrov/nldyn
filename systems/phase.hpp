@@ -18,6 +18,7 @@ public:
     double getAlpha();
     std::vector<double>* getOmegas() { return &omega; }
     void initOmegasDelta(double omega0, double _delta);
+    void initOmegasDeltaRandom(double omega0, double delta);
     template<typename T>
     static double getAlpha(const T &state) {
         double phase_min = fmod(state[0],2*PI);
