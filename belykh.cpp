@@ -14,7 +14,7 @@
 
 #define XSTR(X) STR(X)
 #define STR(X) #X
-#define ALPHA PI/6
+
 
 template<typename T>
 std::string to_str(T value){
@@ -24,9 +24,9 @@ std::string to_str(T value){
 }
 
 int main(int argc, char **argv) {
-    int N = 100;
-    double delta = 0.02;
-    double alpha = ALPHA;
+    int N = 10;
+    double delta = 1;
+    double alpha;
     double omega0 = 2;
 
     bool singleRun = false;
@@ -36,15 +36,15 @@ int main(int argc, char **argv) {
     std::replace(alpha_str.begin(), alpha_str.end(), '/', '_');
 
     std::string filename=(
-        "belykh_{N:"+to_str(N)+"}_random_{om0:"+to_str(omega0)+
-        "}_{alpha:"+alpha_str+"}.dat"
+        "belykh_{N:"+to_str(N)+"}_{om0:"+to_str(omega0)+
+        "}_{delta:"+to_str(delta)+"}_alpha_changing.dat"
         );
 
 
 
     std::cout << "*********************************************************\n";
-    std::cout << "Experiment start:" << "\n\t*** N=" << N
-              << " alpha=" << XSTR(ALPHA) << std::endl;
+    std::cout << "Experiment start:" << "\n\t*** N=" << N << std::endl;
+
     if (!singleRun)
         std::cout << "Result: " << filename << std::endl;
     std::cout << "*********************************************************\n";
@@ -68,20 +68,21 @@ int main(int argc, char **argv) {
 
 
     int num_steps = 20;
-    double delta_start = 0.0;
-    double delta_max = 2;
-    double delta_step = (delta_max - delta_start)/(num_steps - 1);
+    double alpha_start = 0.1;
+    double alpha_max = 1;
+    double alpha_step = (alpha_max - alpha_start)/(num_steps - 1);
 
     double t1 = cv::getTickCount();
-    ofs << "0 0 0" << std::endl;
+
     double Kstep = 0.05;
+
     for (int dc =  1; dc < num_steps; dc++) {
-        delta = delta_start + delta_step*dc;
+        alpha = alpha_max - alpha_step*dc;
         bool sync = false;
         Kuramoto Kmt(N);
-        Kmt.initOmegasDeltaRandom(omega0,delta);
+        Kmt.initOmegasDelta(omega0,delta);
         std::cout << "Step " << dc << " out of " << num_steps
-                  << "; delta = " << delta
+                  << "; alpha = " << alpha
                   <<"; Elapsed: " << (cv::getTickCount() - t1)/cv::getTickFrequency() << std::endl;
         do {
             Kmt.setK(K);
@@ -112,7 +113,7 @@ int main(int argc, char **argv) {
             if (fabs((*om)[0]-(*om)[i]) > delta_max) delta_max = fabs((*om)[0]-(*om)[i]);
         }
         std::cout  <<"\t --> SYNC: K=" << K << " Ktheor=" <<  delta_max/(cos(3*alpha/2.0)*sin(alpha)) << std::endl;
-        ofs << delta_max << " " << K << " " << delta_max/(cos(3*alpha/2.0)*sin(alpha)) << "\n";
+        ofs << alpha << " " << K << " " << delta_max/(cos(3*alpha/2.0)*sin(alpha)) << "\n";
     }
     if (!singleRun)
         ofs.close();
