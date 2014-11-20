@@ -1,19 +1,19 @@
 #!/usr/bin/gnuplot
 
-set term postscript eps enhanced color font 'Helvetica,20'
-set output "belykh_rst_K_delta.eps"
-set termoption dashed
+#set term postscript eps enhanced color font 'Helvetica,20'
+#set output "belykh_rst_K_delta.eps"
+#set termoption dashed
 
 set key above
 set grid
 
-f1="belykh_{N:10}_{om0:2}_{alpha:PI_6}.dat"
+f1="belykh_{N=100}_{om0=2}_{alpha=PI_6}.dat"
 set style line 1 lt 1 pt 4 ps 1 lw 1 lc rgb 'blue'
 set style line 2 lt 2 pt 19 ps 1 lw 1 lc rgb 'blue'
 set style line 3 lt 2 pt 13 ps 1 lw 1 lc rgb 'blue'
 a1=pi/6
 
-f2="belykh_{N:10}_{om0:2}_{alpha:PI_12}.dat"
+f2="belykh_{N=100}_{om0=2}_{alpha=PI_12}.dat"
 set style line 12 lt 1 pt 4 ps 1 lw 1 lc rgb 'green'
 set style line 22 lt 2 pt 19 ps 1 lw 1 lc rgb 'green'
 set style line 32 lt 2 pt 13 ps 1 lw 1 lc rgb 'green'
@@ -23,9 +23,9 @@ a2=pi/12
 set xlabel '{/Symbol D}'
 set ylabel 'K'
 
-plot  f1 u 1:2 w lp ls 1 t 'N=10, {/Symbol a}={/Symbol p}/6, Numer',\
-      f1 u 1:($1/(cos(3*a1/2)*sin(a1))) w lp ls 2 t 'N=10, {/Symbol a}={/Symbol p}/6, Upper Margin',\
-      f1 u 1:($1*cos(a1/2)/sin(a1)) w lp ls 3 t 'N=10, {/Symbol a}={/Symbol p}/6, Lower Margin', \
-      f2 u 1:2                          w lp ls 12 t 'N=10, {/Symbol a}={/Symbol p}/12, Numer',\
-      f2 u 1:($1/(cos(3*a2/2)*sin(a2))) w lp ls 22 t 'N=10, {/Symbol a}={/Symbol p}/12, Upper Margin',\
-      f2 u 1:($1*cos(a2/2)/sin(a2))     w lp ls 32 t 'N=10, {/Symbol a}={/Symbol p}/12, Lower Margin'
+plot  f1 u 1:2 w lp ls 1 t 'N=100, {/Symbol a}={/Symbol p}/6, Numer',\
+      f1 u 1:($1/(cos(3*a1/2)*sin(a1))) w lp ls 2 t 'N=100, {/Symbol a}={/Symbol p}/6, Upper Margin',\
+      f1 u 1:($1*cos(a1/2)/sin(a1)) w lp ls 3 t 'N=100, {/Symbol a}={/Symbol p}/6, Lower Margin', \
+      f2 u 1:2                          w lp ls 12 t 'N=100, {/Symbol a}={/Symbol p}/12, Numer',\
+      f2 u 1:($1/(cos(3*a2/2)*sin(a2))) w lp ls 22 t 'N=100, {/Symbol a}={/Symbol p}/12, Upper Margin',\
+      f2 u 1:($1*cos(a2/2)/sin(a2))     w lp ls 32 t 'N=100, {/Symbol a}={/Symbol p}/12, Lower Margin'
