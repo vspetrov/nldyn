@@ -33,12 +33,12 @@ int timeout = 1000000;
 
 
 static inline double findAlpha(double K, double dmax) {
-    double a = 1;
+    double a = 0;
     do{
         if (K*cos(3*a/2)*sin(a) > dmax) {
             return a;
         }
-    }while ((a > 0) && (a -= 0.01));
+    }while ((a < 1 + 1e-5) && (a += 0.0001));
     return -1;
 }
 int main(int argc, char **argv) {
@@ -60,41 +60,63 @@ int main(int argc, char **argv) {
     std::cout << "Experiment start:" << "\n\t*** N=" << N << std::endl;
 
 
-    double K = 0;
-    Kuramoto Kmt(N);
-    Kmt.initOmegas(1,1);
-    double delta_max = 0;
-    auto om = Kmt.getOmegas();
-    for (int i=1; i<N; i++) {
-        if (fabs((*om)[0]-(*om)[i]) > delta_max) delta_max = fabs((*om)[0]-(*om)[i]);
-    }
+    double K = 1;
 
 
     alpha = 1.0;
 
-    Kmt.setK(K);
-    Kmt.solve(5000,0.01,Kmt.getState());
-    Kmt.addAnalyzer(new TimeSeries(0.1, true));
-    Kmt.solve(1000,0.01,Kmt.getState());
-    auto ts  = Kmt.getAnalyzer<TimeSeries>().back()->getAll();
-    sync = true;
-    for (int i=0; i<ts.size(); i++) {
-        auto row = ts[i];
-        for (int j=0; j<Kmt.getN(); j++) {
-            double real_delta = fabs(row[j]-row[0]);
-            if (fmod(real_delta,2*PI) > alpha) {
-                sync = false;
-                i = ts.size();
-                break;
-            }
-        }
-    }
-    std::cout << "is sync=" << sync
-              << " alpha=" << alpha
-              << " K=" << K
-              << " AlphaTheor=" << findAlpha(K,delta_max) << std::endl;
+    int steps = 20;
+    double Kmax = 8;
+    double dK = Kmax/(steps-1);
+    // std::ofstream ofs("alpha_K_omega_1_delta_1_N_100.dat");
+    // for (int s=0; s<steps; s++) {
+    //     K = dK*s;
+    //     Kuramoto Kmt(N);
+    //     Kmt.initOmegasDelta(1,1);
+    //     double delta_max = 0;
+    //     auto om = Kmt.getOmegas();
+    //     for (int i=1; i<N; i++) {
+    //         if (fabs((*om)[0]-(*om)[i]) > delta_max) delta_max = fabs((*om)[0]-(*om)[i]);
+    //     }
 
+    //     Kmt.setK(K);
 
+    //     Kmt.solve(5000,0.01,Kmt.getState());
+    //     Kmt.addAnalyzer(new TimeSeries(0.1, true));
+    //     Kmt.solve(1000,0.01,Kmt.getState());
+    //     auto ts  = Kmt.getAnalyzer<TimeSeries>().back()->getAll();
+    //     double max_angle = 0;
+
+    //     for (int i=0; i<ts.size(); i++) {
+    //         auto row = ts[i];
+    //         for (int j=0; j<Kmt.getN(); j++) {
+    //             double angle = fabs(row[j]-row[0]);
+    //             if (fmod(angle,2*PI) > max_angle) {
+    //                 max_angle = fmod(angle,2*PI);
+    //             }
+    //         }
+    //     }
+    //     std::cout << "max angle=" << max_angle
+    //               << " alpha=" << alpha
+    //               << " K=" << K
+    //               << " AlphaTheor=" << findAlpha(K,delta_max) << std::endl;
+    //     if (max_angle < 6.2) {
+    //         ofs << K << " " << max_angle;
+    //         double A = findAlpha(K,delta_max);
+    //         if (A > 0) {
+    //             ofs << " " << A;
+    //         }
+    //         ofs << "\n";
+    //     }
+
+    //     ofs.close();
+    // }
+
+    Kuramoto Kmt(N);
+    Kmt.initOmegasDelta(1,1);
+    Kmt.setK(8);
+    Kmt.solve(1005,0.01,Kmt.getState());
+    Kmt.plotCircle();
 
     return 0;
 }
