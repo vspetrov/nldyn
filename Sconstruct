@@ -11,8 +11,8 @@ import subprocess
 # proc.communicate()
 
 env = Environment(ENV = os.environ)
-env['CC']='icc'
-env['CXX']='icpc'
+env['CC']='mpicc'
+env['CXX']='mpic++'
 
 basedir = os.getcwd()
 env.Append(CPPPATH = [basedir])
@@ -31,7 +31,6 @@ sources = [
 'systems/phase.cpp'
 ]
 
-env.Append(LINKFLAGS = ['-openmp'])
-env.Append(CPPFLAGS="-O3 -std=gnu++11 -openmp")
+env.Append(CPPFLAGS="-O3 -std=gnu++11")
 
 env.Program(target="nld", source=sources + ['belykh.cpp'])

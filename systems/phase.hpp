@@ -38,6 +38,7 @@ public:
 
     template<typename T>
     void plotCircle(const T &state, int group = 1) {
+        #if 0
         std::ofstream data_ofs("._phases.dat");
         const double R = 1;
         for (int i=0; i<group; i++)
@@ -55,6 +56,7 @@ public:
             fprintf(gp,"replot\n");
         }
         fflush(gp);
+        #endif
     }
 
 };

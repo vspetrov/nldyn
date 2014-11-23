@@ -14,6 +14,10 @@
 
 #include <pthread.h>
 #include <unistd.h>
+#include <mpi.h>
+
+#include <sys/fcntl.h>
+#include <sys/stat.h>
 
 #define XSTR(X) STR(X)
 #define STR(X) #X
@@ -27,30 +31,53 @@ std::string to_str(T value){
     return oss.str();
 }
 
-static void *threadFunc(void *arg);
-int timeout = 1000000;
+#define LOG(rank, size, comm, format, ...) do {                         \
+        for (int i=0; i<size; i++) {                                    \
+            if (i == rank) {                                            \
+                fprintf(stderr, "rank %d: "format"\n", rank, ## __VA_ARGS__); \
+                usleep(1000);                                           \
+            }                                                           \
+        MPI_Barrier(comm);                                              \
+        }                                                               \
+    }while(0)
 
+static inline
+void calc_clusters(std::vector<double> &freqs, std::vector<std::pair<double,int> > &clusters) {
+    if (freqs.size() == 0)
+        return;
+
+    double v = freqs[0];
+    clusters.push_back(std::pair<double,int>(v,0));
+
+    for (auto it=freqs.begin(); it != freqs.end();) {
+        if (fabs(*it - v) < 0.01) {
+            clusters.back().second++;
+            it = freqs.erase(it);
+        }else {
+            it++;
+        }
+    }
+    calc_clusters(freqs,clusters);
+}
+
+static inline
+std::string arr_2_str(int *arr, int d1, int d2, int d3) {
+    std::string local_rst="[ ";
+    for (int i=0; i<d1; i++) {
+        for (int j=0; j<d2; j++) {
+            local_rst += std::to_string(arr[i*d3+j]) + " ";
+        }
+        if (i != d1 - 1)
+            local_rst += "\n";
+    }
+    local_rst += "];\n";
+    return local_rst;
+}
 int main(int argc, char **argv) {
     int N = 100;
-    double alpha = ALPHA;
-
-
     double mu = 0.1;
 
-    std::string alpha_str(XSTR(ALPHA));
-    std::replace(alpha_str.begin(), alpha_str.end(), '/', '_');
 
-    // std::string filename=(
-    // "belykh_{N:"+to_str(N)+"}_{om0:"+to_str(omega0)+
-    // "}_{delta:"+to_str(delta)+"}_alpha_changing.dat"
-    // );
-
-
-
-    std::cout << "*********************************************************\n";
-    std::cout << "Experiment start:" << "\n\t*** N=" << N
-              << " Alpha=" << alpha_str
-              << " mu=" << mu << std::endl;
 
     double K = 0;
     int Na = int(N*mu);
@@ -58,134 +85,136 @@ int main(int argc, char **argv) {
     bool sync = false;
     Kuramoto Kmt(Ns);
     Kmt.initOmegasDeltaRandom(1,1);
-    double delta_max = 0;
     auto om = Kmt.getOmegas();
-    for (int i=1; i<N; i++) {
-        if (fabs((*om)[0]-(*om)[i]) > delta_max) delta_max = fabs((*om)[0]-(*om)[i]);
-    }
 
-    double KsyncTheorMu = delta_max/((1-mu)*cos(3*alpha/2)*sin(alpha)-2*mu);
-    double KsyncTheor = delta_max/(cos(3*alpha/2)*sin(alpha));
-    std::cout << "KsyncTheor=" << KsyncTheor << " KsyncTheorMu=" << KsyncTheorMu << std::endl;
-
-
-
-#if 0
-    Kmt.setK(K);
-    Kmt.solve(5000,0.01,Kmt.getState());
-    Kmt.addAnalyzer(new TimeSeries(0.1, true));
-    Kmt.solve(1000,0.01,Kmt.getState());
-    auto ts  = Kmt.getAnalyzer<TimeSeries>().back()->getAll();
-    sync = true;
-    for (int i=0; i<ts.size(); i++) {
-        auto row = ts[i];
-        for (int j=0; j<Kmt.getN(); j++) {
-            double real_delta = fabs(row[j]-row[0]);
-            if (fmod(real_delta,2*PI) > alpha) {
-                sync = false;
-                i = ts.size();
-                break;
-            }
-        }
-    }
-    std::cout << "is sync: " << sync << std::endl;
-#endif
-    // K = KsyncTheorMu;
     K = 2;
 
-    Kuramoto KmtE(N);
-    KmtE.initOmegasExtend(*om, 8, 0.4); // 8, 0.4 K=4 -  cluster
-                                      // 8, 2   K=4 - chimera
+    double Kmin=0;
+    double Kmax=4;
+    double delta_min=0;
+    double delta_max=2;
 
-    {
-        om = KmtE.getOmegas();
-        std::ofstream ofs("omegas.dat");
-        for (int i=0; i<N; i++)
-            ofs << (*om)[i] << "\n";
-        ofs.close();
+    int ksteps=100;
+    int delta_steps=100;
+
+    int rank,size;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    assert((size  % 2) == 0);
+    assert((delta_steps % (size/2) == 0));
+    assert(size > 0);
+
+    int my_delta_steps = delta_steps/(size/2);
+    int my_delta_i = rank/2*my_delta_steps;
+
+    int my_k_i = (rank % 2) * ksteps/2;
+    int my_k_steps = ksteps/2;
+    int result;
+
+    // LOG(rank, size, MPI_COMM_WORLD, "my_delta_i %d, my_delta_steps %d, my_k_i %d, my_k_steps %d",
+    //     my_delta_i, my_delta_steps, my_k_i, my_k_steps);
+
+    int *rst = NULL;
+    if ((rank % 2) == 1) {
+        rst = (int*) malloc(my_delta_steps*my_k_steps*sizeof(int));
+    } else {
+        rst = (int*) malloc(my_delta_steps*ksteps*sizeof(int));
     }
+    int my_k_offset = ((rank % 2) == 0) ? ksteps : my_k_steps;
+    for (int id=my_delta_i; id < my_delta_i + my_delta_steps; id++){
+        for (int ik=my_k_i; ik < my_k_i + my_k_steps; ik++)
+        {
+            K = Kmin + (Kmax-Kmin)/(ksteps-1)*ik;
+            double delta = delta_min + (delta_max - delta_min)/(delta_steps-1)*id;
+            Kuramoto KmtE(N);
+            KmtE.initOmegasExtend(*om, 8, delta); // 8, 0.4 K=4 -  cluster
+            // 8, 2   K=4 - chimera
 
-    KmtE.setK(K);
-    KmtE.solve(5000,0.01,KmtE.getState());
-    KmtE.plotCircle();
-    sleep(5);
-    KmtE.addAnalyzer(new TimeSeries(0.1, true));
-    std::vector<double> s1(N),s2(N);
+            KmtE.setK(K);
+            KmtE.solve(5000,0.01,KmtE.getState());
+            std::vector<double> s1(N),s2(N);
+            std::copy(KmtE.getState().begin(),KmtE.getState().end(), s1.begin());
+            const double TestTime = 1000;
+            KmtE.solve(TestTime,0.01,KmtE.getState());
+            std::copy(KmtE.getState().begin(),KmtE.getState().end(), s2.begin());
 
-
-    std::copy(KmtE.getState().begin(),KmtE.getState().end(), s1.begin());
-
-    const double TestTime = 1000;
-    KmtE.solve(TestTime,0.01,KmtE.getState());
-
-    std::copy(KmtE.getState().begin(),KmtE.getState().end(), s2.begin());
-
-    std::vector<double> freqs(N);
-
-    for (int i=0; i<N; i++) {
-        freqs[i] = (s2[i]-s1[i])/TestTime;
-    }
-
-    // std::sort(freqs.begin(),freqs.end());
-
-    std::ofstream ofs("freqs.dat");
-    for (int i=0; i<N; i++)
-        ofs << freqs[i] << "\n";
-    ofs.close();
-
-    {
-        std::ofstream ofs("deltas.dat");
-        auto ts  = KmtE.getAnalyzer<TimeSeries>().back()->getAll();
-        std::vector<bool> sync_all(N);
-        std::fill(sync_all.begin(), sync_all.end(), true);
-
-        double row0_prev = fmod(ts[0][0],2*PI);
-        for (int i=1; i<ts.size(); i++) {
-            auto row = ts[i];
-
-            for (int j=0; j<KmtE.getN(); j++) {
-                double real_delta = fabs(row[j]-row[0]);
-                if (row0_prev > PI && fmod(row[0],2*PI)<PI)
-                    ofs << j << " " << fmod(real_delta,2*PI) << "\n";
-
-                if (fmod(real_delta,2*PI) > alpha) {
-                    sync_all[j] = false;
-                }
+            std::vector<double> freqs(N);
+            for (int i=0; i<N; i++) {
+                freqs[i] = (s2[i]-s1[i])/TestTime;
             }
-            row0_prev = fmod(row[0],2*PI);
-        }
-        ofs.close();
-        int num_sync = 0;
-        for (int i=0; i<N; i++){
-            if (sync_all[i]) num_sync++;
-        }
-        std::cout << "Num sync: " << num_sync << " out of " << N << std::endl;
+            std::vector<std::pair<double,int> > clusters;
+            calc_clusters(freqs,clusters);
+            int num_larger_2 = 0;
+            for (auto &c : clusters)
+                if (c.second > 1)
+                    num_larger_2++;
 
-        pthread_t thread;
-        int result=pthread_create(&thread, NULL, threadFunc,NULL);
-        for (int i=0; i<ts.size(); i++) {
-            auto row = ts[i];
-            if (i/1*1 == i) {
-                KmtE.plotCircle(row,Ns);
-                usleep(timeout);
+            if (clusters.size() == 1) {
+                result = 0;
+            } else if (clusters.size() == 2) {
+                result = 1;
+            } else if (num_larger_2 == 1) {
+                result = 2;
+            } else {
+                result = 3;
             }
-        }
 
+            int i= id - my_delta_i;
+            int j = ik - my_k_i;
+
+            // result = (rank+1)*(id+2)+size*ik*(rank+3);
+            rst[i*my_k_offset + j] = result;
+        }
     }
 
+    // std::string local_rst=arr_2_str(rst,my_delta_steps,my_k_steps,my_k_offset);
+    // LOG(rank ,size, MPI_COMM_WORLD, "\n%s",local_rst.c_str());
+
+    for (int i=0; i<my_delta_steps; i++) {
+        if ((rank % 2) == 1) {
+            void *buf = (void*)&rst[i*my_k_steps];
+            MPI_Send(buf,my_k_steps,MPI_INT,rank-1,1,MPI_COMM_WORLD);
+        } else {
+            MPI_Status st;
+            void *buf = (void*)&rst[my_k_steps+ksteps*i];
+            MPI_Recv(buf,my_k_steps,MPI_INT,rank+1,1,MPI_COMM_WORLD,&st);
+        }
+    }
+
+    MPI_Comm comm;
+    MPI_Comm_split(MPI_COMM_WORLD, rank % 2, 0, &comm);
+
+    if ((rank % 2) == 0) {
+        // std::string local_rst=arr_2_str(rst,my_delta_steps,ksteps,ksteps);
+        // LOG(rank,size/2,comm,"\n%s",local_rst.c_str());
+        void *sbuf = rst;
+        void *rbuf = NULL;
+        if (rank == 0) {
+            rbuf = malloc(delta_steps*ksteps*sizeof(int));
+        }
+        MPI_Gather(sbuf,my_delta_steps*ksteps,MPI_INT,rbuf,my_delta_steps*ksteps, MPI_INT,0,comm);
+        if (rank == 0) {
+            free(rst);
+            rst = (int*)rbuf;
+        }
+    }
+
+
+    if (rank == 0) {
+    // std::string local_rst = arr_2_str(rst,delta_steps,ksteps,ksteps);
+        // std::cout << "RESULT:\n" << local_rst << std::endl;
+        int fd = open("rst.bin", O_CREAT | O_RDWR, S_IREAD | S_IWRITE);
+        write(fd,rst,delta_steps*ksteps*sizeof(int));
+        fd = close(fd);
+    }
+
+    if (rst)
+        free(rst);
+
+    MPI_Comm_free(&comm);
+    MPI_Finalize();
 
     return 0;
-}
-
-static void *threadFunc(void *arg) {
-    std::string str;
-    while (1) {
-        std::cin >> str;
-        std::cout << "GOT " << str << std::endl;
-        if (str == "u")
-            timeout /= 2;
-
-        if (str == "d")
-            timeout *= 2;
-    }
 }
