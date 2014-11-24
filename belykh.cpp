@@ -7,7 +7,6 @@
 #include <fstream>
 #include <algorithm>
 #include <iterator>
-#include <opencv/cv.h>
 #include <sstream>
 #include <string>
 #include <exception>
@@ -90,12 +89,16 @@ int main(int argc, char **argv) {
     K = 2;
 
     double Kmin=0;
-    double Kmax=4;
+    double Kmax=8;
     double delta_min=0;
-    double delta_max=2;
+    double delta_max=4;
 
     int ksteps=100;
+    if (argc > 1)
+        ksteps = atoi(argv[1]);
     int delta_steps=100;
+    if (argc > 2)
+        delta_steps = atoi(argv[2]);
 
     int rank,size;
     MPI_Init(&argc, &argv);
@@ -141,21 +144,28 @@ int main(int argc, char **argv) {
             std::copy(KmtE.getState().begin(),KmtE.getState().end(), s2.begin());
 
             std::vector<double> freqs(N);
+            // std::string file="freqs_K_"+to_str(K)+"_delta_"+to_str(delta)+".dat";
+            // std::ofstream ofs(file);
+
             for (int i=0; i<N; i++) {
                 freqs[i] = (s2[i]-s1[i])/TestTime;
+                // ofs << freqs[i] << "\n";
             }
+            // ofs.close();
+
+
             std::vector<std::pair<double,int> > clusters;
             calc_clusters(freqs,clusters);
-            int num_larger_2 = 0;
+            int num_large = 0;
             for (auto &c : clusters)
-                if (c.second > 1)
-                    num_larger_2++;
+                if (c.second >= 0.9*Ns)
+                    num_large++;
 
             if (clusters.size() == 1) {
                 result = 0;
             } else if (clusters.size() == 2) {
                 result = 1;
-            } else if (num_larger_2 == 1) {
+            } else if (num_large == 1) {
                 result = 2;
             } else {
                 result = 3;
